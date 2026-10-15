@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장금상선 AX 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#f3f4f7; --panel:#ffffff; --ink:#152033; --sub:#5d6778; --line:#e1e4ea; --soft:#f6f7f9;
+    --accent:#1f5bd6; --accent-soft:#e8effc; --ok:#1f8a5b; --ok-soft:#e5f4ec; --warn:#c9541f; --warn-soft:#fbede5;
+    --muted:#9aa3b2; --navy:#0f1d36;
+    --c1:#1f5bd6; --c2:#d07a1f; --c3:#1f8a6a; --c4:#7a4fc2; --c5:#b8336a;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1420; --panel:#162033; --ink:#e7ecf4; --sub:#9aa6ba; --line:#26324a; --soft:#1b2639;
+      --accent:#6b9bff; --accent-soft:#1d2c4d; --ok:#4cc38a; --ok-soft:#173327; --warn:#f08a5d; --warn-soft:#3a2219;
+      --muted:#6c7890; --navy:#0a1222;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1420; --panel:#162033; --ink:#e7ecf4; --sub:#9aa6ba; --line:#26324a; --soft:#1b2639;
+    --accent:#6b9bff; --accent-soft:#1d2c4d; --ok:#4cc38a; --ok-soft:#173327; --warn:#f08a5d; --warn-soft:#3a2219;
+    --muted:#6c7890; --navy:#0a1222;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard","Malgun Gothic",sans-serif;
+    font-size:15px;line-height:1.5;word-break:keep-all}
+  header{background:var(--navy);color:#fff;padding:22px 32px}
+  .hwrap{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:24px;font-weight:800;letter-spacing:-.01em}
+  header h1 span{color:#ffb54a}
+  header p{color:#a9b4c8;font-size:13px;margin-top:2px}
+  .hbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;
+    padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .btn:hover{background:rgba(255,255,255,.16)}
+  main{max-width:1280px;margin:0 auto;padding:24px 32px 48px;display:flex;flex-direction:column;gap:22px}
+  h2{font-size:17px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  h2 small{font-size:12px;color:var(--sub);font-weight:500}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .kpi .l{font-size:12.5px;color:var(--sub);font-weight:600}
+  .kpi .v{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+  .kpi .v small{font-size:14px;color:var(--sub);font-weight:600;margin-left:3px}
+  .kpi .d{font-size:12px;color:var(--sub);margin-top:2px}
+  .kpi.hl{border:2px solid var(--accent)}
+  .today{background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600}
+  .today b{color:var(--accent)}
+
+  /* 묶음 카드 */
+  .groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+  .group{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .ghead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .ghead b{font-size:15px}
+  .ghead .gtag{font-size:11.5px;color:var(--sub)}
+  .gbar{height:4px}
+  .member{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .member:last-child{border-bottom:none}
+  .mtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .mname{font-weight:800;font-size:15px}
+  .mname .role{font-size:11.5px;font-weight:600;color:var(--sub);margin-left:4px}
+  .badge{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .badge.wait{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .agent{font-size:13.5px;margin-top:4px}
+  .extra{font-size:12px;color:var(--accent);margin-top:3px;font-weight:600}
+  .file{font-family:Consolas,monospace;font-size:12px;color:var(--warn);background:var(--warn-soft);
+    border-radius:5px;padding:1px 6px;display:inline-block;margin-top:6px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+  .stat{background:var(--soft);border-radius:8px;padding:6px 8px}
+  .stat .sl{font-size:10.5px;color:var(--sub)}
+  .stat .sv{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+  .stat .sv.na{color:var(--muted);font-weight:600}
+  .stat.rv .sv:not(.na){color:var(--warn)}
+  .stat.sv2 .sv:not(.na){color:var(--ok)}
+
+  /* 2열 */
+  .two{display:grid;grid-template-columns:1.35fr 1fr;gap:14px}
+  .bars{display:flex;flex-direction:column;gap:10px}
+  .brow{display:grid;grid-template-columns:72px 1fr 92px;gap:10px;align-items:center;font-size:13px}
+  .brow .n{font-weight:700}
+  .track{position:relative;height:18px;background:var(--soft);border-radius:5px;overflow:hidden}
+  .before{position:absolute;inset:0 auto 0 0;background:var(--muted);opacity:.35;border-radius:5px}
+  .after{position:absolute;inset:0 auto 0 0;border-radius:5px}
+  .brow .h{text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px}
+  .brow .h b{font-weight:800}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--sub);margin-top:12px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:var(--soft);border-radius:10px}
+  .item .ic{font-size:18px;line-height:1.2}
+  .item b{font-size:14px}
+  .item p{font-size:12.5px;color:var(--sub)}
+
+  pre{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:Consolas,monospace;
+    font-size:12.5px;overflow-x:auto;color:var(--ink)}
+  .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .rule{background:var(--soft);border-radius:10px;padding:12px 14px}
+  .rule b{display:block;font-size:14px;margin-bottom:2px}
+  .rule p{font-size:12.5px;color:var(--sub)}
+  .todo li{margin-left:18px;font-size:13.5px;margin-bottom:4px}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--sub);font-size:13px;margin-top:12px}
+  .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+  input[type=file]{display:none}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding-bottom:24px}
+
+  @media (max-width:1000px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .two{grid-template-columns:1fr}
+    .rules{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    header{padding:18px 16px}
+    main{padding:16px 16px 40px}
+    .groups{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+    .kpi .v{font-size:24px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div>
+      <h1>장금상선 <span>AX</span> 대시보드</h1>
+      <p>조원 9명 · 에이전트 9개 · 결과 파일(json)을 한 화면에 · 기준일 <span id="baseDate">2026-10-15</span></p>
+    </div>
+    <div class="hbtns">
+      <a class="btn" href="slides.html" style="text-decoration:none">🎤 발표 자료</a>
+      <a class="btn" href="roles.txt" style="text-decoration:none">📝 역할메모</a>
+      <button class="btn" id="loadBtn">📂 결과 파일 불러오기</button>
+      <button class="btn" id="sampleBtn">🧪 샘플로 채워보기</button>
+      <button class="btn" id="resetBtn">↺ 비우기</button>
+      <button class="btn" id="themeBtn">🌓</button>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept=".json,application/json" multiple>
+</header>
+
+<main>
+  <!-- KPI -->
+  <section class="kpis" id="kpis"></section>
+  <div class="today" id="today"></div>
+
+  <!-- 묶음별 현황 -->
+  <section>
+    <h2>묶음별 현황 <small>(확인) 표시한 사람이 짝의 결과를 확인합니다</small></h2>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <!-- 시간 + 공통 역할 -->
+  <section class="two">
+    <div class="panel">
+      <h2>월 소요 시간 · 목표 <small>각자 PDF 기준</small></h2>
+      <div class="bars" id="bars"></div>
+      <div class="legend">
+        <span><i style="background:var(--muted);opacity:.45"></i>지금</span>
+        <span><i style="background:var(--accent)"></i>목표 (자동화 후)</span>
+        <span>목표 없음 = 아직 숫자를 정하지 않음</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>함께 쓰는 것</h2>
+      <div class="list">
+        <div class="item"><span class="ic">🧩</span><div><b>공통 스킬 · 오더 읽기·검사</b><p>김지영 제공 · 박동환 · 박혜진 · 김규리 사용</p></div></div>
+        <div class="item"><span class="ic">🧩</span><div><b>공통 스킬 · 두 파일 대조</b><p>정한희 제공 · 차하정 재고 대사 · 실적 통합본 검산</p></div></div>
+        <div class="item"><span class="ic">🗂️</span><div><b>결과 파일 틀 · 대시보드 뼈대</b><p>박동환 (조장)</p></div></div>
+        <div class="item"><span class="ic">⏰</span><div><b>매일 자동 실행</b><p>김정희 · 아침 점검 흐름 확장</p></div></div>
+        <div class="item"><span class="ic">📊</span><div><b>대시보드 화면 · 보고 요약</b><p>류민호</p></div></div>
+        <div class="item"><span class="ic">🔎</span><div><b>선사·터미널 조회 방법 통일</b><p>김정희 · 송민희</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 결과 파일 형식 + 수칙 -->
+  <section class="two">
+    <div class="panel">
+      <h2>결과 파일 공통 형식 <small>파일 이름은 각자 정한 이름 그대로</small></h2>
+<pre>{
+  "날짜": "2026-10-16",
+  "처리건수": 12,
+  "확인필요": 2,
+  "아낀시간분": 15
+}</pre>
+      <div class="drop" id="drop">여기에 json 파일을 끌어다 놓거나 위의 <b>📂 결과 파일 불러오기</b>를 누르세요<br>
+        (order · dispatch · margin · kyss · inventory · settlement · schedule · docs · sales)</div>
+    </div>
+    <div class="panel">
+      <h2>조 공통 수칙</h2>
+      <div class="rules" style="grid-template-columns:1fr">
+        <div class="rule"><b>🔒 가리고 넣기</b><p>화주명·단가·연락처는 "화주A"로 바꿔서. 연습은 더미 파일로만.</p></div>
+        <div class="rule"><b>✉️ 초안만, 발송은 사람</b><p>화주·차주·선사에 나가는 글은 읽고 직접 보낸다.</p></div>
+        <div class="rule"><b>✅ 원본과 맞춘 뒤 적용</b><p>행 수·합계·컨테이너 번호를 원본과 대조. 애매하면 [확인 필요].</p></div>
+      </div>
+      <h2 style="margin-top:16px">확인 필요</h2>
+      <ul class="todo">
+        <li>조장이 박동환이 맞는지</li>
+        <li>송민희 소요 시간 실측 (지금은 추정)</li>
+      </ul>
+    </div>
+  </section>
+</main>
+<footer>장금상선 AX 대시보드 · 근거: 역할메모.txt · 불러온 결과 파일은 이 화면에서만 보이고 어디에도 전송되지 않습니다</footer>
+
+<script>
+const GROUPS = [
+  {id:1, name:"① 오더 읽기", color:"var(--c1)", tag:"옮겨 적기"},
+  {id:2, name:"② 금액 판단", color:"var(--c2)", tag:"머릿속 계산"},
+  {id:3, name:"③ 두 파일 대조", color:"var(--c3)", tag:"눈으로 대조"},
+  {id:4, name:"④ 조회·점검", color:"var(--c4)", tag:"하나씩 조회"},
+  {id:5, name:"⑤ 실적 보고", color:"var(--c5)", tag:"실적 취합"},
+];
+const MEMBERS = [
+  {g:1, name:"박동환", role:"조장", agent:"메일·카톡 오더 → 구글 시트 자동 기입", extra:"공통 결과 파일 틀 · 대시보드 뼈대", file:"order", before:7, after:1.8},
+  {g:1, name:"김지영", role:"확인", agent:"지시서 → 배차판 19칸 + [확인 필요]", extra:"공통 「오더 읽기·검사」 스킬", file:"dispatch", before:32.6, after:13},
+  {g:2, name:"박혜진", role:"", agent:"이메일 오더 → 청구가·지급가 → 마진 판정", extra:"", file:"margin", before:43.4, after:null},
+  {g:2, name:"김규리", role:"확인", agent:"오더장 → KYSS 등록 · 애매한 건 확인 목록", extra:"", file:"kyss", before:3.6, after:null},
+  {g:3, name:"차하정", role:"", agent:"게이트로그·이트랜스·스탁파일 재고 대사", extra:"", file:"inventory", before:28, after:9},
+  {g:3, name:"정한희", role:"확인", agent:"해외 정산서 ↔ 프로그램 정산 내역 대조", extra:"공통 「두 파일 대조」 스킬", file:"settlement", before:3.3, after:1},
+  {g:4, name:"김정희", role:"", agent:"모선 10척 ETA·ETD 변동 → 화주 메일 초안", extra:"매일 자동 실행", file:"schedule", before:10.9, after:1.8},
+  {g:4, name:"송민희", role:"확인", agent:"오더별 서류 ✅❌ · 반입제한 체크리스트", extra:"", file:"docs", before:40, after:10, est:true},
+  {g:5, name:"류민호", role:"", agent:"통합본 → 전월 대비 증감 · 신규·유지율", extra:"대시보드 화면 · 보고 요약", file:"sales", before:1, after:null, plus:true},
+];
+const results = {}; // file → {date,count,review,saved}
+
+const pick = (o, keys) => { for (const k of keys) if (o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k]; };
+function normalize(o){
+  if (Array.isArray(o)) o = o[o.length-1] || {};
+  return {
+    date:   pick(o, ["날짜","date"]),
+    count:  Number(pick(o, ["처리건수","처리 건수","count","processed"]) ?? NaN),
+    review: Number(pick(o, ["확인필요","확인 필요","확인필요건수","review","needs_review"]) ?? NaN),
+    saved:  Number(pick(o, ["아낀시간분","아낀 시간","아낀시간","saved_min","saved_minutes"]) ?? NaN),
+  };
+}
+const fmt = v => Number.isFinite(v) ? v.toLocaleString("ko-KR") : "–";
+const h1 = v => (Math.round(v*10)/10).toLocaleString("ko-KR");
+
+function renderKpis(){
+  const arrived = MEMBERS.filter(m => results[m.file]).length;
+  const before = MEMBERS.reduce((s,m)=>s+m.before,0);
+  const saveTarget = MEMBERS.filter(m=>m.after!=null).reduce((s,m)=>s+(m.before-m.after),0);
+  let cnt=0, rev=0, sav=0;
+  for (const m of MEMBERS){ const r=results[m.file]; if(!r) continue;
+    if(Number.isFinite(r.count)) cnt+=r.count; if(Number.isFinite(r.review)) rev+=r.review; if(Number.isFinite(r.saved)) sav+=r.saved; }
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><div class="l">결과 파일 도착</div><div class="v">${arrived}<small>/ 9</small></div><div class="d">에이전트 9개 중</div></div>
+    <div class="kpi"><div class="l">오늘 처리 건수</div><div class="v">${arrived?fmt(cnt):"–"}<small>건</small></div><div class="d">도착한 파일 합계</div></div>
+    <div class="kpi"><div class="l">확인 필요</div><div class="v" style="color:var(--warn)">${arrived?fmt(rev):"–"}<small>건</small></div><div class="d">사람이 봐야 할 건</div></div>
+    <div class="kpi hl"><div class="l">오늘 아낀 시간</div><div class="v" style="color:var(--ok)">${arrived?fmt(sav):"–"}<small>분</small></div><div class="d">도착한 파일 합계</div></div>
+    <div class="kpi"><div class="l">월 소요 → 목표 절감</div><div class="v">${Math.round(before)}<small>h → −${Math.round(saveTarget)}h</small></div><div class="d">목표 있는 6명 기준</div></div>`;
+  const t = document.getElementById("today");
+  if(!arrived){ t.innerHTML = `아직 도착한 결과 파일이 없어요. 각자 json을 내면 여기에 <b>오늘 한 줄 요약</b>이 나옵니다.`; }
+  else {
+    const top = MEMBERS.filter(m=>results[m.file] && results[m.file].review>0).sort((a,b)=>results[b.file].review-results[a.file].review)[0];
+    t.innerHTML = `오늘 <b>${arrived}명</b> 결과 도착 · 처리 <b>${fmt(cnt)}건</b> · 확인 필요 <b>${fmt(rev)}건</b> · 아낀 시간 <b>${fmt(sav)}분</b>`
+      + (top ? ` · 확인 필요가 가장 많은 곳: <b>${top.name}</b> (${results[top.file].review}건)` : "")
+      + (arrived<9 ? ` · 미도착 ${9-arrived}명` : " · 전원 도착 ✅");
+  }
+}
+
+function stat(label, v, cls){ const ok=Number.isFinite(v);
+  return `<div class="stat ${cls||""}"><div class="sl">${label}</div><div class="sv ${ok?"":"na"}">${ok?fmt(v):"–"}</div></div>`; }
+
+function renderGroups(){
+  document.getElementById("groups").innerHTML = GROUPS.map(g=>{
+    const ms = MEMBERS.filter(m=>m.g===g.id);
+    return `<div class="group"><div class="gbar" style="background:${g.color}"></div>
+      <div class="ghead"><b>${g.name}</b><span class="gtag">${g.tag}</span></div>
+      ${ms.map(m=>{ const r=results[m.file];
+        return `<div class="member">
+          <div class="mtop"><span class="mname">${m.name}${m.role?`<span class="role">(${m.role})</span>`:""}</span>
+            ${r?`<span class="badge ok">도착 · ${r.date||"날짜 없음"}</span>`:`<span class="badge wait">대기</span>`}</div>
+          <div class="agent">${m.agent}</div>
+          ${m.extra?`<div class="extra">+ ${m.extra}</div>`:""}
+          <span class="file">${m.file}.json</span>
+          <div class="stats">
+            ${stat("처리 건수", r?.count)}
+            ${stat("확인 필요", r?.review, "rv")}
+            ${stat("아낀 시간(분)", r?.saved, "sv2")}
+            <div class="stat"><div class="sl">월 소요</div><div class="sv">${h1(m.before)}${m.plus?"+":""}h</div></div>
+          </div></div>`; }).join("")}
+    </div>`;
+  }).join("");
+}
+
+function renderBars(){
+  const max = Math.max(...MEMBERS.map(m=>m.before));
+  const sorted = [...MEMBERS].sort((a,b)=>b.before-a.before);
+  document.getElementById("bars").innerHTML = sorted.map(m=>{
+    const col = GROUPS.find(g=>g.id===m.g).color;
+    const bw = m.before/max*100, aw = m.after!=null ? m.after/max*100 : 0;
+    return `<div class="brow"><span class="n">${m.name.replace(" 담당","")}</span>
+      <div class="track"><div class="before" style="width:${bw}%"></div>${m.after!=null?`<div class="after" style="width:${aw}%;background:${col}"></div>`:""}</div>
+      <span class="h">${m.est?"~":""}${h1(m.before)}${m.plus?"+":""}h → ${m.after!=null?`<b>${h1(m.after)}h</b>`:'<span style="color:var(--muted)">목표 없음</span>'}</span></div>`;
+  }).join("");
+}
+
+function render(){ renderKpis(); renderGroups(); renderBars(); }
+
+function readFiles(files){
+  const names = [];
+  const jobs = [...files].map(f => f.text().then(txt=>{
+    const key = f.name.replace(/\.json$/i,"").toLowerCase();
+    const m = MEMBERS.find(x=>x.file===key);
+    if(!m){ names.push(`${f.name}: 이름이 맞는 담당자가 없음`); return; }
+    try{ results[m.file] = normalize(JSON.parse(txt)); }
+    catch(e){ names.push(`${f.name}: json 형식 오류`); }
+  }));
+  Promise.all(jobs).then(()=>{ render(); if(names.length) alert("불러오지 못한 파일\n\n"+names.join("\n")); });
+}
+
+document.getElementById("loadBtn").onclick = ()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange = e=>{ readFiles(e.target.files); e.target.value=""; };
+const drop = document.getElementById("drop");
+["dragover","dragenter"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==="drop"||e.target===drop)drop.classList.remove("over")}));
+document.addEventListener("drop",e=>{ if(e.dataTransfer?.files?.length) readFiles(e.dataTransfer.files); });
+
+document.getElementById("sampleBtn").onclick = ()=>{
+  const S = {order:[14,2,15],dispatch:[18,3,54],margin:[9,2,null],kyss:[11,1,null],inventory:[46,3,45],
+             settlement:[20,2,140],schedule:[10,2,25],docs:[7,1,90]};
+  for(const [k,[c,r,s]] of Object.entries(S)) results[k]={date:"샘플",count:c,review:r,saved:s??NaN};
+  render();
+};
+document.getElementById("resetBtn").onclick = ()=>{ for(const k in results) delete results[k]; render(); };
+
+const root = document.documentElement;
+try{ const t = localStorage.getItem("ax-theme"); if(t) root.dataset.theme=t; }catch(e){}
+document.getElementById("themeBtn").onclick = ()=>{
+  const dark = root.dataset.theme ? root.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try{ localStorage.setItem("ax-theme", root.dataset.theme); }catch(e){}
+};
+
+render();
+</script>
+</body>
+</html>
